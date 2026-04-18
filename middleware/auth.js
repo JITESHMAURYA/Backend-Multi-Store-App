@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const Vendor = require('../models/Vendor');
+const User = require('../models/user');
+const Vendor = require('../models/vendor');
 
 //authentication middleware
 // this middleware fucntion checks if the user is authenticated
