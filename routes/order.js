@@ -1,6 +1,7 @@
 const express = require("express");
 const orderRouter = express.Router();
 const Order = require("../models/order");
+const Stripe = require("stripe")("sk_test_51TO2kBFA7WNYxrUM5ukpFoYHROyLfvEnRZuZbwngHmjbbUHLgaqaqqUBhDslgZmkDdIXnpBdaspTljPDOZ6LgIMo00g6JfH5xh");
 const { auth, vendorAuth } = require("../middleware/auth");
 
 
@@ -20,6 +21,9 @@ orderRouter.post("/api/orders", auth, async (req, res) => {
       image,
       vendorId,
       buyerId,
+      paymentStatus,
+      paymentIntentId,
+      paymentMethod,
     } = req.body;
     const createdAt = new Date().getMilliseconds(); //Get the current date
     //create new order instance with the extracted field
@@ -42,6 +46,72 @@ orderRouter.post("/api/orders", auth, async (req, res) => {
     return res.status(201).json(order);
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// //Payment api
+// orderRouter.post("/api/payment", async (req, res) => {
+//   try {
+//     const { orderId, paymentMethodId, currency = "usd" } = req.body;
+//     //validate the presence of required fields
+//     if (!orderId || !paymentMethodId || !currency) {
+//       return res.status(400).json({ msg: "Missing required fields" });
+//     }
+//     //Query for the order by orderId
+//     const order = await Order.findById(orderId);
+//     if (!order) {
+//       console.log("Order not found for id:", orderId);
+//       return res.status(404).json({ msg: "Order not found" });
+//     }
+//     //calculate the total amount(price * quantity) 
+//     const totalAmount = order.productPrice * order.quantity;
+//     //ensure the amount is at least $0.50 USD or it's equivalent
+//     const minimumAmount = 0.50;
+//     if (totalAmount < minimumAmount) {
+//       return res.status(400).json({ error: "Total amount must be at least $0.50 USD" });
+//     }
+//     //convert total amount to cents as Stripe expects the amount in the smallest currency unit
+//     const amountInCents = Math.round(totalAmount * 100);
+//     //now create the payment intent with the correct amount
+//     const paymentIntent = await Stripe.paymentIntents.create({
+//       amount: amountInCents,
+//       currency,
+//       payment_method: paymentMethodId,
+//       automatic_payment_methods: { enabled: true },
+//     });
+//     console.log("Payment Status  : ", paymentIntent.status);
+//     return res.json({
+//       staus: "success",
+//       paymentIntentId: paymentIntent.id,
+//       amount: paymentIntent.amount / 100,
+//       currency: paymentIntent.currency,
+//     })
+//   } catch (e) {
+//     return res.status(500).json({ error: e.message });
+//   }
+// });
+
+orderRouter.post('/api/payment-intent', auth, async (req, res) => {
+  try {
+    const { amount, currency } = req.body;
+
+    const paymentIntent = await Stripe.paymentIntents.create({
+      amount,
+      currency,
+    });
+
+    return res.status(200).json(paymentIntent);
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+orderRouter.get('/api/payment-intent/:id', auth, async (req, res) => {
+  try {
+    const paymentIntent = await Stripe.paymentIntents.retrieve(req.params.id);
+    return res.status(200).json(paymentIntent);
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
   }
 });
 

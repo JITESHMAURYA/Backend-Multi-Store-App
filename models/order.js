@@ -56,6 +56,19 @@ const orderSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
+
+  paymentStatus: {
+    type: String,
+    required: true,
+  },
+  paymentStatusId: {
+    type: String,
+    required: true,
+  },
+  paymentMenthod: {
+    type: String,
+    required: true,
+  },
   createdAt: {
     type: Number,
     required: true,
